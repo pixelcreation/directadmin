@@ -317,6 +317,19 @@ class User extends BaseObject
         );
         $this->clearCache();
     }
+    
+    /**
+     * Generate a new one time pass or login URL
+     *
+     * @param $package
+     */
+    public function loginKeys($data)
+    {
+        $this->getContext()->invokeApiPost('LOGIN_KEYS',
+            array_merge([ 'action' => 'create', 'user' => $this->getUsername() ], $data)
+        );
+        $this->clearCache();
+    }
 
     /**
      * @param bool $newValue Whether catch-all email is enabled for this user
