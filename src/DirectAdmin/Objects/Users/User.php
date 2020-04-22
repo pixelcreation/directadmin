@@ -325,10 +325,9 @@ class User extends BaseObject
      */
     public function loginKeys($data)
     {
-        $this->getContext()->invokeApiPost('LOGIN_KEYS',
-            array_merge([ 'action' => 'create', 'user' => $this->getUsername() ], $data)
+        return $this->getContext()->invokeApiPost('LOGIN_KEYS',
+            array_merge([ 'action' => 'create' ], $data)
         );
-        $this->clearCache();
     }
 
     /**
