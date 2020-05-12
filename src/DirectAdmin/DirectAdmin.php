@@ -160,6 +160,9 @@ class DirectAdmin
             if ($response->getHeader('Content-Type')[0] == 'text/html') {
                 throw new DirectAdminException(sprintf('DirectAdmin API returned text/html to %s %s containing "%s"', $method, $uri, strip_tags($response->getBody()->getContents())));
             }
+            if ($response->getHeader('Content-Type')[0] == 'application/json; charset=utf-8') {
+                return json_decode($response->getBody()->getContents(), true);
+            }
             $body = $response->getBody()->getContents();
             return Conversion::responseToArray($body);
         } catch (TransferException $exception) {
