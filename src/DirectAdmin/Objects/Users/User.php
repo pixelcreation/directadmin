@@ -304,7 +304,7 @@ class User extends BaseObject
         ));
         $this->clearCache();
     }
-    
+
     /**
      * Modifies the user package
      *
@@ -317,7 +317,7 @@ class User extends BaseObject
         );
         $this->clearCache();
     }
-    
+
     /**
      * Generate a new one time pass or login URL
      *
@@ -328,6 +328,28 @@ class User extends BaseObject
         return $this->getContext()->invokeApiPost('LOGIN_KEYS',
             array_merge([ 'action' => 'create' ], $data)
         );
+    }
+
+    /**
+     * Create DNS records
+     *
+     * @param $package
+     */
+    public function dnsControl($data)
+    {
+        return $this->getContext()->invokeApiPost('DNS_CONTROL',
+            array_merge([ 'action' => 'add' ], $data)
+        );
+    }
+
+    /**
+     * Loads the current dns configuration from the server.
+     *
+     * @return array
+     */
+    public function loadDnsControl($domain)
+    {
+        return $this->getContext()->invokeApiGet('DNS_CONTROL', ['domain' => $domain, 'json' => 'yes']);
     }
 
     /**
