@@ -305,7 +305,7 @@ class User extends BaseObject
         $this->clearCache();
     }
 
-    /**
+        /**
      * Modifies the user package
      *
      * @param $package
