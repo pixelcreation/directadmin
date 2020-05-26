@@ -351,6 +351,16 @@ class User extends BaseObject
     {
         return $this->getContext()->invokeApiGet('DNS_CONTROL', ['domain' => $domain, 'json' => 'yes']);
     }
+    
+    /**
+     * Create FTP user
+     * 
+     * @param $data
+     * @return array
+     */
+    public function create_ftp($data) {
+        return $this->getContext()->invokeApiPost('FTP', $data);
+    }
 
     /**
      * @param bool $newValue Whether catch-all email is enabled for this user
