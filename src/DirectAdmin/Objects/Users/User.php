@@ -358,8 +358,22 @@ class User extends BaseObject
      * @param $data
      * @return array
      */
-    public function create_ftp($data) {
-        return $this->getContext()->invokeApiPost('FTP', $data);
+    public function create_ftp_user($data) {
+        return $this->getContext()->invokeApiPost('FTP',
+            array_merge([ 'action' => 'create' ], $data)
+        );
+    }
+
+    /**
+     * Delete FTP user
+     *
+     * @param $data
+     * @return array
+     */
+    public function delete_ftp_user($data) {
+        return $this->getContext()->invokeApiPost('FTP',
+            array_merge([ 'action' => 'delete' ], $data)
+        );
     }
 
     /**
