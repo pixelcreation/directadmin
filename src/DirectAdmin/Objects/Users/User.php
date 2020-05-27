@@ -375,6 +375,19 @@ class User extends BaseObject
             array_merge([ 'action' => 'delete' ], $data)
         );
     }
+    
+   
+    /**
+     * Install SSL certificate
+     *
+     * @param $data
+     * @return array
+     */
+    public function install_ssl($data) {
+        return $this->getContext()->invokeApiPost('SSL',
+            array_merge([ 'action' => 'save' ], $data)
+        );
+    }
 
     /**
      * @param bool $newValue Whether catch-all email is enabled for this user
