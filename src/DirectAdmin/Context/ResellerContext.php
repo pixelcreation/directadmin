@@ -64,6 +64,23 @@ class ResellerContext extends UserContext
         ]));
         return new $returnType($username, $this);
     }
+    
+    /**
+     * Internal helper function for updating password user.
+     *
+     * @param string $username Login for the new user
+     * @param string $password Password for the new user
+     * @return void
+     */
+    public function updatePassword($username, $password)
+    {
+        return $this->invokeApiPost('USER_PASSWD', [
+            'passwd' => $password,
+            'passwd2' => $password,
+            'username' => $username,
+        ]);
+    }
+
 
     /**
      * Deletes a single account.
