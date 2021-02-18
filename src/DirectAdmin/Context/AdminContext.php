@@ -55,6 +55,22 @@ class AdminContext extends ResellerContext
         );
         return $this->createAccount($username, $password, $email, $options, 'ACCOUNT_RESELLER', Reseller::class);
     }
+    
+    /**
+     * Internal helper function for updating password user.
+     *
+     * @param string $username Login for the new user
+     * @param string $password Password for the new user
+     * @return void
+     */
+    public function updatePassword($username, $password)
+    {
+        $this->invokeApiPost('USER_PASSWD', [
+            'passwd' => $password,
+            'passwd2' => $password,
+            'username' => $username,
+        ]);
+    }
 
     /**
      * Returns a list of known admins on the server.
