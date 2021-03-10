@@ -317,6 +317,19 @@ class User extends BaseObject
         );
         $this->clearCache();
     }
+    
+    /**
+     * Modifies the reseller package
+     *
+     * @param $package
+     */
+    public function modifyPackageReseller($package)
+    {
+        $this->getContext()->invokeApiPost('MODIFY_RESELLER',
+            ['action' => 'package', 'user' => $this->getUsername(), 'package' => $package]
+        );
+        $this->clearCache();
+    }
 
     /**
      * Generate a new one time pass or login URL
