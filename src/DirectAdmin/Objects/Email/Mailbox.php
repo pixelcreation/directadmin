@@ -10,6 +10,7 @@
 
 namespace Omines\DirectAdmin\Objects\Email;
 
+use GuzzleHttp\Psr7\Query;
 use Omines\DirectAdmin\Objects\Domain;
 
 /**
@@ -32,7 +33,7 @@ class Mailbox extends MailObject
     {
         parent::__construct($prefix, $domain);
         if (isset($config)) {
-            $this->setCache(self::CACHE_DATA, is_string($config) ? \GuzzleHttp\Psr7\parse_query($config) : $config);
+            $this->setCache(self::CACHE_DATA, Query::parse($config));
         }
     }
 
@@ -145,7 +146,7 @@ class Mailbox extends MailObject
                 'action' => 'full_list',
             ]);
 
-            return \GuzzleHttp\Psr7\parse_query($result[$this->getPrefix()]);
+            return Query::parse($result[$this->getPrefix()]);
         });
     }
 }
