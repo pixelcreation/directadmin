@@ -17,14 +17,13 @@ namespace Omines\DirectAdmin\Objects;
  */
 abstract class DomainObject extends BaseObject
 {
-    /** @var Domain */
-    private $domain;
+    private Domain $domain;
 
     /**
-     * @param string $name Canonical name for the object
+     * @param string $name   Canonical name for the object
      * @param Domain $domain Domain to which the object belongs
      */
-    protected function __construct($name, Domain $domain)
+    protected function __construct(string $name, Domain $domain)
     {
         parent::__construct($name, $domain->getContext());
         $this->domain = $domain;
@@ -33,29 +32,24 @@ abstract class DomainObject extends BaseObject
     /**
      * Invokes a POST command on a domain object.
      *
-     * @param string $command Command to invoke
-     * @param string $action Action to execute
-     * @param array $parameters Additional options for the command
-     * @param bool $clearCache Whether to clear the domain cache
+     * @param string $command    Command to invoke
+     * @param string $action     Action to execute
+     * @param array  $parameters Additional options for the command
+     * @param bool   $clearCache Whether to clear the domain cache
+     *
      * @return array Response from the API
      */
-    protected function invokePost($command, $action, $parameters = [], $clearCache = true)
+    protected function invokePost(string $command, string $action, array $parameters = [], bool $clearCache = true): array
     {
         return $this->domain->invokePost($command, $action, $parameters, $clearCache);
     }
 
-    /**
-     * @return Domain
-     */
-    public function getDomain()
+    public function getDomain(): Domain
     {
         return $this->domain;
     }
 
-    /**
-     * @return string
-     */
-    public function getDomainName()
+    public function getDomainName(): string
     {
         return $this->domain->getDomainName();
     }
@@ -63,12 +57,9 @@ abstract class DomainObject extends BaseObject
     /**
      * Converts an associative array of descriptors to objects of the specified type.
      *
-     * @param array $items
-     * @param string $class
-     * @param Domain $domain
-     * @return array
+     *
      */
-    public static function toDomainObjectArray(array $items, $class, Domain $domain)
+    public static function toDomainObjectArray(array $items, string $class, Domain $domain): array
     {
         array_walk($items, function (&$value, $name) use ($class, $domain) {
             $value = new $class($name, $domain, $value);

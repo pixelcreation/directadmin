@@ -28,6 +28,7 @@ class AdminContext extends ResellerContext
      * @param string $username
      * @param string $password
      * @param string $email
+     *
      * @return Admin The newly created Admin
      */
     public function createAdmin($username, $password, $email)
@@ -38,16 +39,17 @@ class AdminContext extends ResellerContext
     /**
      * Creates a new Reseller level account.
      *
-     * @param string $username
-     * @param string $password
-     * @param string $email
-     * @param string $domain
+     * @param string       $username
+     * @param string       $password
+     * @param string       $email
+     * @param string       $domain
      * @param string|array $package Either a package name or an array of options for custom
-     * @param string $ip shared, sharedreseller or assign. Defaults to 'shared'
+     * @param string       $ip      shared, sharedreseller or assign. Defaults to 'shared'
+     *
      * @return Reseller
      * @url http://www.directadmin.com/api.html#create for options to use.
      */
-    public function createReseller($username, $password, $email, $domain, $package = [], $ip = 'shared')
+    public function createReseller($username, $password, $email, $domain, array|string $package = [], $ip = 'shared')
     {
         $options = array_merge(
             ['ip' => $ip, 'domain' => $domain, 'serverip' => 'ON', 'dns' => 'OFF'],
@@ -55,19 +57,20 @@ class AdminContext extends ResellerContext
         );
         return $this->createAccount($username, $password, $email, $options, 'ACCOUNT_RESELLER', Reseller::class);
     }
-    
+
     /**
      * Internal helper function for updating password user.
      *
      * @param string $username Login for the new user
      * @param string $password Password for the new user
+     *
      * @return void
      */
     public function updatePassword($username, $password)
     {
         $this->invokeApiPost('USER_PASSWD', [
-            'passwd' => $password,
-            'passwd2' => $password,
+            'passwd'   => $password,
+            'passwd2'  => $password,
             'username' => $username,
         ]);
     }
@@ -108,12 +111,13 @@ class AdminContext extends ResellerContext
      * Returns a specific reseller by name, or NULL if there is no reseller by this name.
      *
      * @param string $username
+     *
      * @return null|Reseller
      */
     public function getReseller($username)
     {
         $resellers = $this->getResellers();
-        return isset($resellers[$username]) ? $resellers[$username] : null;
+        return $resellers[$username] ?? null;
     }
 
     /**
@@ -130,7 +134,8 @@ class AdminContext extends ResellerContext
      * Returns a new AdminContext acting as the specified admin.
      *
      * @param string $username
-     * @param bool $validate Whether to check the admin exists and is an admin
+     * @param bool   $validate Whether to check the admin exists and is an admin
+     *
      * @return AdminContext
      */
     public function impersonateAdmin($username, $validate = false)
@@ -142,7 +147,8 @@ class AdminContext extends ResellerContext
      * Returns a new ResellerContext acting as the specified reseller.
      *
      * @param string $username
-     * @param bool $validate Whether to check the reseller exists and is a reseller
+     * @param bool   $validate Whether to check the reseller exists and is a reseller
+     *
      * @return ResellerContext
      */
     public function impersonateReseller($username, $validate = false)

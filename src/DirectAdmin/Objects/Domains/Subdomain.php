@@ -12,13 +12,14 @@ namespace Omines\DirectAdmin\Objects\Domains;
 
 use Omines\DirectAdmin\Objects\Domain;
 use Omines\DirectAdmin\Objects\DomainObject;
+use Stringable;
 
 /**
  * Subdomain.
  *
  * @author Niels Keurentjes <niels.keurentjes@omines.com>
  */
-class Subdomain extends DomainObject
+class Subdomain extends DomainObject implements Stringable
 {
     /**
      * Construct the object.
@@ -36,9 +37,10 @@ class Subdomain extends DomainObject
      *
      * @param Domain $domain Parent domain
      * @param string $prefix Prefix of the subdomain
+     *
      * @return Subdomain The newly created object
      */
-    public static function create(Domain $domain, $prefix)
+    public static function create(Domain $domain, string $prefix): Subdomain
     {
         $domain->invokePost('SUBDOMAIN', 'create', ['subdomain' => $prefix]);
         return new self($prefix, $domain);
@@ -49,50 +51,42 @@ class Subdomain extends DomainObject
      *
      * @param bool $deleteContents Whether to delete all directory contents as well
      */
-    public function delete($deleteContents = true)
+    public function delete(bool $deleteContents = true)
     {
         $this->invokePost('SUBDOMAIN', 'delete', [
-            'select0' => $this->getPrefix(),
+            'select0'  => $this->getPrefix(),
             'contents' => ($deleteContents ? 'yes' : 'no'),
         ]);
     }
 
     /**
      * Returns the full domain name for the subdomain.
-     *
-     * @return string
      */
-    public function getDomainName()
+    public function getDomainName(): string
     {
         return $this->getPrefix() . '.' . parent::getDomainName();
     }
 
     /**
      * Returns the full domain name for the subdomain.
-     *
-     * @return string
      */
-    public function getBaseDomainName()
+    public function getBaseDomainName(): string
     {
         return parent::getDomainName();
     }
 
     /**
      * Returns the prefix of the subdomain.
-     *
-     * @return string
      */
-    public function getPrefix()
+    public function getPrefix(): string
     {
         return $this->getName();
     }
 
     /**
      * Allows the class to be used as a string representing the full domain name.
-     *
-     * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->getDomainName();
     }

@@ -11,6 +11,7 @@
 namespace Omines\DirectAdmin\Objects\Users;
 
 use Omines\DirectAdmin\Context\AdminContext;
+use Omines\DirectAdmin\Context\BaseContext;
 use Omines\DirectAdmin\Context\ResellerContext;
 use Omines\DirectAdmin\Context\UserContext;
 use Omines\DirectAdmin\DirectAdminException;
@@ -31,29 +32,25 @@ class Reseller extends User
         parent::__construct($name, $context, $config);
     }
 
-    /**
-     * @param string $username
-     * @return null|User
-     */
-    public function getUser($username)
+    public function getUser(string $username): ?User
     {
         $users = $this->getUsers();
-        return isset($users[$username]) ? $users[$username] : null;
+        return $users[$username] ?? null;
     }
 
     /**
      * @return User[]
      */
-    public function getUsers()
+    public function getUsers(): array
     {
         return BaseObject::toObjectArray($this->getContext()->invokeApiGet('SHOW_USERS', ['reseller' => $this->getUsername()]),
-                                     User::class, $this->getContext());
+            User::class, $this->getContext());
     }
 
     /**
-     * @return ResellerContext
+     * @return ResellerContext|BaseContext
      */
-    public function impersonate()
+    public function impersonate(): ResellerContext|BaseContext
     {
         /** @var AdminContext $context */
         if (!($context = $this->getContext()) instanceof AdminContext) {

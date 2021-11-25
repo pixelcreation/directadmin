@@ -10,20 +10,19 @@
 
 namespace Omines\DirectAdmin\Objects\Database;
 
-use Omines\DirectAdmin\Objects\Database;
 use Omines\DirectAdmin\Objects\BaseObject;
+use Omines\DirectAdmin\Objects\Database;
+use Stringable;
 
 /**
  * AccessHost.
  */
-class AccessHost extends BaseObject
+class AccessHost extends BaseObject implements Stringable
 {
-    /** @var Database $database */
-    protected $database;
+    protected Database $database;
 
     /**
-     * @param string   $host
-     * @param Database $database
+     * @param string $host
      */
     public function __construct($host, Database $database)
     {
@@ -31,18 +30,13 @@ class AccessHost extends BaseObject
         $this->database = $database;
     }
 
-    /**
-     * @param Database $database
-     * @param string   $host
-     * @return AccessHost
-     */
-    public static function create(Database $database, $host)
+    public static function create(Database $database, string $host): AccessHost
     {
         $database->getContext()->invokeApiPost('DATABASES', [
             'action' => 'accesshosts',
             'create' => 'yes',
-            'db' => $database->getDatabaseName(),
-            'host' => $host,
+            'db'     => $database->getDatabaseName(),
+            'host'   => $host,
         ]);
         return new self($host, $database);
     }
@@ -53,26 +47,20 @@ class AccessHost extends BaseObject
     public function delete()
     {
         $this->getContext()->invokeApiPost('DATABASES', [
-            'action' => 'accesshosts',
-            'delete' => 'yes',
-            'db' => $this->database->getDatabaseName(),
+            'action'  => 'accesshosts',
+            'delete'  => 'yes',
+            'db'      => $this->database->getDatabaseName(),
             'select0' => $this->getName(),
         ]);
         $this->database->clearCache();
     }
 
-    /**
-     * @return string
-     */
-    public function getHost()
+    public function getHost(): string
     {
         return $this->getName();
     }
 
-    /**
-     * @return string
-     */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->getHost();
     }

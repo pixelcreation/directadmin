@@ -23,16 +23,17 @@ class ResellerContext extends UserContext
     /**
      * Creates a new user on the server.
      *
-     * @param string $username Login for the new user
-     * @param string $password Password for the new user
-     * @param string $email Email for the new user
-     * @param string $domain Default domain for the new user
-     * @param string $ip IP for the user
-     * @param string|array $package Either a package name or an array of options for custom
+     * @param string       $username Login for the new user
+     * @param string       $password Password for the new user
+     * @param string       $email    Email for the new user
+     * @param string       $domain   Default domain for the new user
+     * @param string       $ip       IP for the user
+     * @param string|array $package  Either a package name or an array of options for custom
+     *
      * @return User Newly created user
      * @url http://www.directadmin.com/api.html#create for options to use.
      */
-    public function createUser($username, $password, $email, $domain, $ip, $package = [])
+    public function createUser($username, $password, $email, $domain, $ip, array|string $package = [])
     {
         $options = array_merge(
             ['ip' => $ip, 'domain' => $domain],
@@ -44,39 +45,41 @@ class ResellerContext extends UserContext
     /**
      * Internal helper function for creating new accounts.
      *
-     * @param string $username Login for the new user
-     * @param string $password Password for the new user
-     * @param string $email Email for the new user
-     * @param array $options List of DA account options to apply
-     * @param string $endpoint API endpoint to invoke
+     * @param string $username   Login for the new user
+     * @param string $password   Password for the new user
+     * @param string $email      Email for the new user
+     * @param array  $options    List of DA account options to apply
+     * @param string $endpoint   API endpoint to invoke
      * @param string $returnType Class name that should wrap the resulting account
+     *
      * @return object An instance of the type specified in $returnType
      */
     protected function createAccount($username, $password, $email, $options, $endpoint, $returnType)
     {
         $this->invokeApiPost($endpoint, array_merge($options, [
-            'action' => 'create',
-            'add' => 'Submit',
-            'email' => $email,
-            'passwd' => $password,
-            'passwd2' => $password,
+            'action'   => 'create',
+            'add'      => 'Submit',
+            'email'    => $email,
+            'passwd'   => $password,
+            'passwd2'  => $password,
             'username' => $username,
         ]));
         return new $returnType($username, $this);
     }
-    
+
     /**
      * Internal helper function for updating password user.
      *
      * @param string $username Login for the new user
      * @param string $password Password for the new user
+     *
      * @return void
      */
     public function updatePassword($username, $password)
     {
         return $this->invokeApiPost('USER_PASSWD', [
-            'passwd' => $password,
-            'passwd2' => $password,
+            'passwd'   => $password,
+            'passwd2'  => $password,
             'username' => $username,
         ]);
     }
@@ -130,7 +133,7 @@ class ResellerContext extends UserContext
      * Suspends (or unsuspends) multiple accounts.
      *
      * @param string[] $usernames Accounts to delete
-     * @param bool $suspend (true - suspend, false - unsuspend)
+     * @param bool     $suspend   (true - suspend, false - unsuspend)
      */
     public function suspendAccounts(array $usernames, $suspend = true)
     {
@@ -165,12 +168,13 @@ class ResellerContext extends UserContext
      * Returns a single user by name.
      *
      * @param string $username
+     *
      * @return User|null
      */
     public function getUser($username)
     {
         $resellers = $this->getUsers();
-        return isset($resellers[$username]) ? $resellers[$username] : null;
+        return $resellers[$username] ?? null;
     }
 
     /**
@@ -187,7 +191,8 @@ class ResellerContext extends UserContext
      * Impersonates a user, allowing the reseller/admin to act on their behalf.
      *
      * @param string $username Login of the account to impersonate
-     * @param bool $validate Whether to check the user exists and is a user
+     * @param bool   $validate Whether to check the user exists and is a user
+     *
      * @return UserContext
      */
     public function impersonateUser($username, $validate = false)

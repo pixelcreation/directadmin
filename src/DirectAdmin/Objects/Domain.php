@@ -10,6 +10,7 @@
 
 namespace Omines\DirectAdmin\Objects;
 
+use GuzzleHttp\Psr7\Query;
 use Omines\DirectAdmin\Context\UserContext;
 use Omines\DirectAdmin\DirectAdminException;
 use Omines\DirectAdmin\Objects\Domains\Subdomain;
@@ -17,77 +18,85 @@ use Omines\DirectAdmin\Objects\Email\Forwarder;
 use Omines\DirectAdmin\Objects\Email\Mailbox;
 use Omines\DirectAdmin\Objects\Users\User;
 use Omines\DirectAdmin\Utility\Conversion;
+use Stringable;
 
 /**
  * Encapsulates a domain and its derived objects, like aliases, pointers and mailboxes.
  *
  * @author Niels Keurentjes <niels.keurentjes@omines.com>
  */
-class Domain extends BaseObject
+class Domain extends BaseObject implements Stringable
 {
-    const CACHE_FORWARDERS = 'forwarders';
-    const CACHE_MAILBOXES = 'mailboxes';
-    const CACHE_SUBDOMAINS = 'subdomains';
+    public const CACHE_FORWARDERS = 'forwarders';
+    public const CACHE_MAILBOXES  = 'mailboxes';
+    public const CACHE_SUBDOMAINS = 'subdomains';
 
-    const CATCHALL_BLACKHOLE = ':blackhole:';
-    const CATCHALL_FAIL = ':fail:';
+    public const CATCHALL_BLACK_HOLE = ':blackhole:';
+    public const CATCHALL_FAIL       = ':fail:';
 
     /** @var string */
-    private $domainName;
+    private string $domainName;
 
     /** @var User */
-    private $owner;
+    private User $owner;
 
     /** @var string[] */
-    private $aliases;
+    private array $aliases;
 
     /** @var string[] */
-    private $pointers;
+    private array $pointers;
 
     /** @var float */
-    private $bandwidthUsed;
+    private float $bandwidthUsed;
 
     /** @var float|null */
-    private $bandwidthLimit;
+    private ?float $bandwidthLimit = null;
 
     /** @var float */
-    private $diskUsage;
+    private float $diskUsage;
 
     /**
      * Construct the object.
      *
-     * @param string $name The domain name
+     * @param string      $name    The domain name
      * @param UserContext $context The owning user context
-     * @param string|array $config The basic config string as returned by CMD_API_ADDITIONAL_DOMAINS
+     * @param string      $config  The basic config string as returned by CMD_API_ADDITIONAL_DOMAINS
      */
-    public function __construct($name, UserContext $context, $config)
+    public function __construct(string $name, UserContext $context, string $config)
     {
         parent::__construct($name, $context);
-        $this->setConfig($context, is_array($config) ? $config : \GuzzleHttp\Psr7\parse_query($config));
+        $this->setConfig($context, is_array($config) ? $config : Query::parse($config));
     }
 
     /**
      * Creates a new domain under the specified user.
      *
-     * @param User $user Owner of the domain
-     * @param string $domainName Domain name to create
+     * @param User       $user           Owner of the domain
+     * @param string     $domainName     Domain name to create
      * @param float|null $bandwidthLimit Bandwidth limit in MB, or NULL to share with account
-     * @param float|null $diskLimit Disk limit in MB, or NULL to share with account
-     * @param bool|null $ssl Whether SSL is to be enabled, or NULL to fallback to account default
-     * @param bool|null $php Whether PHP is to be enabled, or NULL to fallback to account default
-     * @param bool|null $cgi Whether CGI is to be enabled, or NULL to fallback to account default
+     * @param float|null $diskLimit      Disk limit in MB, or NULL to share with account
+     * @param bool|null  $ssl            Whether SSL is to be enabled, or NULL to fall back to account default
+     * @param bool|null  $php            Whether PHP is to be enabled, or NULL to fall back to account default
+     * @param bool|null  $cgi            Whether CGI is to be enabled, or NULL to fall back to account default
+     *
      * @return Domain The newly created domain
      */
-    public static function create(User $user, $domainName, $bandwidthLimit = null, $diskLimit = null, $ssl = null, $php = null, $cgi = null)
+    public static function create(User   $user,
+                                  string $domainName,
+                                  float  $bandwidthLimit = null,
+                                  float  $diskLimit = null,
+                                  bool   $ssl = null,
+                                  bool   $php = null,
+                                  bool   $cgi = null): Domain
     {
         $options = [
-            'action' => 'create',
-            'domain' => $domainName,
+            'action'                                              => 'create',
+            'domain'                                              => $domainName,
             (isset($bandwidthLimit) ? 'bandwidth' : 'ubandwidth') => $bandwidthLimit,
-            (isset($diskLimit) ? 'quota' : 'uquota') => $diskLimit,
-            'ssl' => Conversion::onOff($ssl, $user->hasSSL()),
-            'php' => Conversion::onOff($php, $user->hasPHP()),
-            'cgi' => Conversion::onOff($cgi, $user->hasCGI()),
+            (isset($diskLimit) ? 'quota' : 'uquota')              => $diskLimit,
+            'ssl'                                                 => Conversion::onOff($ssl, $user->hasSSL()),
+            'php'                                                 => Conversion::onOff($php, $user->hasPHP()),
+            'cgi'                                                 => Conversion::onOff($cgi, $user->hasCGI()),
         ];
         $user->getContext()->invokeApiPost('DOMAIN', $options);
         $config = $user->getContext()->invokeApiGet('ADDITIONAL_DOMAINS');
@@ -97,11 +106,12 @@ class Domain extends BaseObject
     /**
      * Creates a new email forwarder.
      *
-     * @param string $prefix Part of the email address before the @
+     * @param string          $prefix     Part of the email address before the @
      * @param string|string[] $recipients One or more recipients
+     *
      * @return Forwarder The newly created forwarder
      */
-    public function createForwarder($prefix, $recipients)
+    public function createForwarder(string $prefix, array|string $recipients): Forwarder
     {
         return Forwarder::create($this, $prefix, $recipients);
     }
@@ -109,48 +119,50 @@ class Domain extends BaseObject
     /**
      * Creates a new mailbox.
      *
-     * @param string $prefix Prefix for the account
-     * @param string $password Password for the account
-     * @param int|null $quota Quota in megabytes, or zero/null for unlimited
+     * @param string   $prefix    Prefix for the account
+     * @param string   $password  Password for the account
+     * @param int|null $quota     Quota in megabytes, or zero/null for unlimited
      * @param int|null $sendLimit Send limit, or 0 for unlimited, or null for system default
+     *
      * @return Mailbox The newly created mailbox
      */
-    public function createMailbox($prefix, $password, $quota = null, $sendLimit = null)
+    public function createMailbox(string $prefix,
+                                  string $password,
+                                  int    $quota = null,
+                                  int    $sendLimit = null): Mailbox
     {
         return Mailbox::create($this, $prefix, $password, $quota, $sendLimit);
     }
 
     /**
      * Creates a pointer or alias.
-     *
-     * @param string $domain
-     * @param bool $alias
      */
-    public function createPointer($domain, $alias = false)
+    public function createPointer(string $domain, bool $alias)
     {
         $parameters = [
             'domain' => $this->domainName,
-            'from' => $domain,
+            'from'   => $domain,
             'action' => 'add',
         ];
         if ($alias) {
             $parameters['alias'] = 'yes';
-            $list = &$this->aliases;
+            $list                = &$this->aliases;
         } else {
             $list = &$this->pointers;
         }
         $this->getContext()->invokeApiPost('DOMAIN_POINTER', $parameters);
         $list[] = $domain;
-        $list = array_unique($list);
+        $list   = array_unique($list);
     }
 
     /**
      * Creates a new subdomain.
      *
      * @param string $prefix Prefix to add before the domain name
+     *
      * @return Subdomain The newly created subdomain
      */
-    public function createSubdomain($prefix)
+    public function createSubdomain(string $prefix): Subdomain
     {
         return Subdomain::create($this, $prefix);
     }
@@ -161,9 +173,9 @@ class Domain extends BaseObject
     public function delete()
     {
         $this->getContext()->invokeApiPost('DOMAIN', [
-            'delete' => true,
+            'delete'    => true,
             'confirmed' => true,
-            'select0' => $this->domainName,
+            'select0'   => $this->domainName,
         ]);
         $this->owner->clearCache();
     }
@@ -171,7 +183,7 @@ class Domain extends BaseObject
     /**
      * @return string[] List of aliases for this domain
      */
-    public function getAliases()
+    public function getAliases(): array
     {
         return $this->aliases;
     }
@@ -179,7 +191,7 @@ class Domain extends BaseObject
     /**
      * @return float Bandwidth used in megabytes
      */
-    public function getBandwidthUsed()
+    public function getBandwidthUsed(): float
     {
         return $this->bandwidthUsed;
     }
@@ -187,7 +199,7 @@ class Domain extends BaseObject
     /**
      * @return float|null Bandwidth quotum in megabytes, or NULL for unlimited
      */
-    public function getBandwidthLimit()
+    public function getBandwidthLimit(): ?float
     {
         return $this->bandwidthLimit;
     }
@@ -195,16 +207,16 @@ class Domain extends BaseObject
     /**
      * @return string|null Currently configured catch-all configuration
      */
-    public function getCatchall()
+    public function getCatchall(): ?string
     {
         $value = $this->getContext()->invokeApiGet('EMAIL_CATCH_ALL', ['domain' => $this->domainName]);
-        return isset($value['value']) ? $value['value'] : null;
+        return $value['value'] ?? null;
     }
 
     /**
      * @return float Disk usage in megabytes
      */
-    public function getDiskUsage()
+    public function getDiskUsage(): float
     {
         return $this->diskUsage;
     }
@@ -212,7 +224,7 @@ class Domain extends BaseObject
     /**
      * @return string The real domain name
      */
-    public function getDomainName()
+    public function getDomainName(): string
     {
         return $this->domainName;
     }
@@ -222,7 +234,7 @@ class Domain extends BaseObject
      *
      * @return string[]
      */
-    public function getDomainNames()
+    public function getDomainNames(): array
     {
         return $this->getCache('domainNames', function () {
             $list = array_merge($this->aliases, $this->pointers, [$this->getDomainName()]);
@@ -234,7 +246,7 @@ class Domain extends BaseObject
     /**
      * @return Forwarder[] Associative array of forwarders
      */
-    public function getForwarders()
+    public function getForwarders(): array
     {
         return $this->getCache(self::CACHE_FORWARDERS, function () {
             $forwarders = $this->getContext()->invokeApiGet('EMAIL_FORWARDERS', [
@@ -247,7 +259,7 @@ class Domain extends BaseObject
     /**
      * @return Mailbox[] Associative array of mailboxes
      */
-    public function getMailboxes()
+    public function getMailboxes(): array
     {
         return $this->getCache(self::CACHE_MAILBOXES, function () {
             $boxes = $this->getContext()->invokeApiGet('POP', [
@@ -258,10 +270,7 @@ class Domain extends BaseObject
         });
     }
 
-    /**
-     * @return User
-     */
-    public function getOwner()
+    public function getOwner(): User
     {
         return $this->owner;
     }
@@ -269,7 +278,7 @@ class Domain extends BaseObject
     /**
      * @return string[] List of domain pointers for this domain
      */
-    public function getPointers()
+    public function getPointers(): array
     {
         return $this->pointers;
     }
@@ -277,7 +286,7 @@ class Domain extends BaseObject
     /**
      * @return Subdomain[] Associative array of subdomains
      */
-    public function getSubdomains()
+    public function getSubdomains(): array
     {
         return $this->getCache(self::CACHE_SUBDOMAINS, function () {
             $subs = $this->getContext()->invokeApiGet('SUBDOMAINS', ['domain' => $this->getDomainName()]);
@@ -289,13 +298,17 @@ class Domain extends BaseObject
     /**
      * Invokes a POST command on a domain object.
      *
-     * @param string $command Command to invoke
-     * @param string $action Action to execute
-     * @param array $parameters Additional options for the command
-     * @param bool $clearCache Whether to clear the domain cache on success
+     * @param string $command    Command to invoke
+     * @param string $action     Action to execute
+     * @param array  $parameters Additional options for the command
+     * @param bool   $clearCache Whether to clear the domain cache on success
+     *
      * @return array Response from the API
      */
-    public function invokePost($command, $action, $parameters = [], $clearCache = true)
+    public function invokePost(string $command,
+                               string $action,
+                               array  $parameters = [],
+                               bool   $clearCache = true): array
     {
         $response = $this->getContext()->invokeApiPost($command, array_merge([
             'action' => $action,
@@ -310,7 +323,7 @@ class Domain extends BaseObject
     /**
      * @param string $newValue New address for the catch-all, or one of the CATCHALL_ constants
      */
-    public function setCatchall($newValue)
+    public function setCatchall(string $newValue)
     {
         $parameters = array_merge(['domain' => $this->domainName, 'update' => 'Update'],
             (empty($newValue) || $newValue[0] == ':') ? ['catch' => $newValue] : ['catch' => 'address', 'value' => $newValue]);
@@ -319,10 +332,8 @@ class Domain extends BaseObject
 
     /**
      * Allows Domain object to be passed as a string with its domain name.
-     *
-     * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->getDomainName();
     }
@@ -331,7 +342,7 @@ class Domain extends BaseObject
      * Sets configuration options from raw DirectAdmin data.
      *
      * @param UserContext $context Owning user context
-     * @param array $config An array of settings
+     * @param array       $config  An array of settings
      */
     private function setConfig(UserContext $context, array $config)
     {
@@ -345,12 +356,12 @@ class Domain extends BaseObject
         }
 
         // Parse plain options
-        $bandwidths = array_map('trim', explode('/', $config['bandwidth']));
-        $this->bandwidthUsed = floatval($bandwidths[0]);
+        $bandwidths           = array_map('trim', explode('/', $config['bandwidth']));
+        $this->bandwidthUsed  = floatval($bandwidths[0]);
         $this->bandwidthLimit = !isset($bandwidths[1]) || ctype_alpha($bandwidths[1]) ? null : floatval($bandwidths[1]);
-        $this->diskUsage = floatval($config['quota']);
+        $this->diskUsage      = floatval($config['quota']);
 
-        $this->aliases = array_filter(explode('|', $config['alias_pointers']));
+        $this->aliases  = array_filter(explode('|', $config['alias_pointers']));
         $this->pointers = array_filter(explode('|', $config['pointers']));
     }
 }

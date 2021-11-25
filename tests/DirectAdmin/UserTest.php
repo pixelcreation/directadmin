@@ -190,8 +190,8 @@ class UserTest extends \PHPUnit\Framework\TestCase
         self::$user->setAllowCatchall(true);
         $domain->setCatchall('aap@noot.mies');
         $this->assertEquals('aap@noot.mies', $domain->getCatchall());
-        $domain->setCatchall(Domain::CATCHALL_BLACKHOLE);
-        $this->assertEquals(Domain::CATCHALL_BLACKHOLE, $domain->getCatchall());
+        $domain->setCatchall(Domain::CATCHALL_BLACK_HOLE);
+        $this->assertEquals(Domain::CATCHALL_BLACK_HOLE, $domain->getCatchall());
         $domain->setCatchall(Domain::CATCHALL_FAIL);
         $this->assertEquals(Domain::CATCHALL_FAIL, $domain->getCatchall());
     }

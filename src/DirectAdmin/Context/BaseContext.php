@@ -19,17 +19,13 @@ use Omines\DirectAdmin\DirectAdmin;
  */
 abstract class BaseContext
 {
-    /** @var DirectAdmin */
-    private $connection;
-
     /**
      * Constructs the object.
      *
      * @param DirectAdmin $connection A prepared connection
      */
-    public function __construct(DirectAdmin $connection)
+    public function __construct(private DirectAdmin $connection)
     {
-        $this->connection = $connection;
     }
 
     /**
@@ -46,7 +42,8 @@ abstract class BaseContext
      * Invokes the DirectAdmin API via HTTP GET.
      *
      * @param string $command DirectAdmin API command to invoke
-     * @param array $query Optional query parameters
+     * @param array  $query   Optional query parameters
+     *
      * @return array The parsed and validated response
      */
     public function invokeApiGet($command, $query = [])
@@ -57,8 +54,9 @@ abstract class BaseContext
     /**
      * Invokes the DirectAdmin API via HTTP POST.
      *
-     * @param string $command DirectAdmin API command to invoke
-     * @param array $postParameters Optional form parameters
+     * @param string $command        DirectAdmin API command to invoke
+     * @param array  $postParameters Optional form parameters
+     *
      * @return array The parsed and validated response
      */
     public function invokeApiPost($command, $postParameters = [])

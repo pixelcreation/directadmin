@@ -20,42 +20,38 @@ use Omines\DirectAdmin\Objects\Users\User;
  */
 class Database extends BaseObject
 {
-    const CACHE_ACCESS_HOSTS = 'access_hosts';
+    public const CACHE_ACCESS_HOSTS = 'access_hosts';
 
-    /** @var User */
-    private $owner;
-
-    /** @var string */
-    private $databaseName;
+    private string $databaseName;
 
     /**
      * Database constructor.
      *
-     * @param string $name Name of the database
-     * @param User $owner Database owner
+     * @param string      $name    Name of the database
+     * @param User        $owner   Database owner
      * @param UserContext $context Context within which the object is valid
      */
-    public function __construct($name, User $owner, UserContext $context)
+    public function __construct(string $name, private User $owner, UserContext $context)
     {
         parent::__construct($name, $context);
-        $this->owner = $owner;
         $this->databaseName = $this->owner->getUsername() . '_' . $this->getName();
     }
 
     /**
      * Creates a new database under the specified user.
      *
-     * @param User $user Owner of the database
-     * @param string $name Database name, without <user>_ prefix
-     * @param string $username Username to access the database with, without <user>_ prefix
+     * @param User        $user     Owner of the database
+     * @param string      $name     Database name, without <user>_ prefix
+     * @param string      $username Username to access the database with, without <user>_ prefix
      * @param string|null $password Password, or null if database user already exists
+     *
      * @return Database Newly created database
      */
-    public static function create(User $user, $name, $username, $password)
+    public static function create(User $user, string $name, string $username, ?string $password): Database
     {
         $options = [
             'action' => 'create',
-            'name' => $name,
+            'name'   => $name,
         ];
         if (!empty($password)) {
             $options += ['user' => $username, 'passwd' => $password, 'passwd2' => $password];
@@ -72,7 +68,7 @@ class Database extends BaseObject
     public function delete()
     {
         $this->getContext()->invokeApiPost('DATABASES', [
-            'action' => 'delete',
+            'action'  => 'delete',
             'select0' => $this->getDatabaseName(),
         ]);
         $this->getContext()->getContextUser()->clearCache();
@@ -81,25 +77,19 @@ class Database extends BaseObject
     /**
      * @return Database\AccessHost[]
      */
-    public function getAccessHosts()
+    public function getAccessHosts(): array
     {
         return $this->getCache(self::CACHE_ACCESS_HOSTS, function () {
             $accessHosts = $this->getContext()->invokeApiGet('DATABASES', [
                 'action' => 'accesshosts',
-                'db' => $this->getDatabaseName(),
+                'db'     => $this->getDatabaseName(),
             ]);
 
-            return array_map(function ($name) {
-                return new Database\AccessHost($name, $this);
-            }, $accessHosts);
+            return array_map(fn($name) => new Database\AccessHost($name, $this), $accessHosts);
         });
     }
 
-    /**
-     * @param string $name
-     * @return Database\AccessHost
-     */
-    public function createAccessHost($name)
+    public function createAccessHost(string $name): Database\AccessHost
     {
         $accessHost = Database\AccessHost::create($this, $name);
         $this->getContext()->getContextUser()->clearCache();
@@ -109,15 +99,12 @@ class Database extends BaseObject
     /**
      * @return string Name of the database
      */
-    public function getDatabaseName()
+    public function getDatabaseName(): string
     {
         return $this->databaseName;
     }
 
-    /**
-     * @return User
-     */
-    public function getOwner()
+    public function getOwner(): User
     {
         return $this->owner;
     }

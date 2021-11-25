@@ -10,13 +10,14 @@
 
 namespace Omines\DirectAdmin\Objects\Users;
 
+use Omines\DirectAdmin\Context\BaseContext;
 use Omines\DirectAdmin\Context\ResellerContext;
 use Omines\DirectAdmin\Context\UserContext;
 use Omines\DirectAdmin\DirectAdmin;
 use Omines\DirectAdmin\DirectAdminException;
+use Omines\DirectAdmin\Objects\BaseObject;
 use Omines\DirectAdmin\Objects\Database;
 use Omines\DirectAdmin\Objects\Domain;
-use Omines\DirectAdmin\Objects\BaseObject;
 use Omines\DirectAdmin\Utility\Conversion;
 
 /**
@@ -26,21 +27,21 @@ use Omines\DirectAdmin\Utility\Conversion;
  */
 class User extends BaseObject
 {
-    const CACHE_CONFIG = 'config';
-    const CACHE_DATABASES = 'databases';
-    const CACHE_USAGE = 'usage';
+    public const CACHE_CONFIG    = 'config';
+    public const CACHE_DATABASES = 'databases';
+    public const CACHE_USAGE     = 'usage';
 
     /** @var Domain[] * */
-    private $domains;
+    private array $domains;
 
     /**
      * Construct the object.
      *
-     * @param string $name Username of the account
+     * @param string      $name    Username of the account
      * @param UserContext $context The context managing this object
-     * @param mixed|null $config An optional preloaded configuration
+     * @param mixed|null  $config  An optional preloaded configuration
      */
-    public function __construct($name, UserContext $context, $config = null)
+    public function __construct($name, UserContext $context, mixed $config = null)
     {
         parent::__construct($name, $context);
         if (isset($config)) {
@@ -60,12 +61,13 @@ class User extends BaseObject
     /**
      * Creates a new database under this user.
      *
-     * @param string $name Database name, without <user>_ prefix
-     * @param string $username Username to access the database with, without <user>_ prefix
+     * @param string      $name     Database name, without <user>_ prefix
+     * @param string      $username Username to access the database with, without <user>_ prefix
      * @param string|null $password Password, or null if database user already exists
+     *
      * @return Database Newly created database
      */
-    public function createDatabase($name, $username, $password = null)
+    public function createDatabase(string $name, string $username, string $password = null): Database
     {
         $db = Database::create($this->getSelfManagedUser(), $name, $username, $password);
         $this->clearCache();
@@ -75,15 +77,21 @@ class User extends BaseObject
     /**
      * Creates a new domain under this user.
      *
-     * @param string $domainName Domain name to create
+     * @param string     $domainName     Domain name to create
      * @param float|null $bandwidthLimit Bandwidth limit in MB, or NULL to share with account
-     * @param float|null $diskLimit Disk limit in MB, or NULL to share with account
-     * @param bool|null $ssl Whether SSL is to be enabled, or NULL to fallback to account default
-     * @param bool|null $php Whether PHP is to be enabled, or NULL to fallback to account default
-     * @param bool|null $cgi Whether CGI is to be enabled, or NULL to fallback to account default
+     * @param float|null $diskLimit      Disk limit in MB, or NULL to share with account
+     * @param bool|null  $ssl            Whether SSL is to be enabled, or NULL to fall back to account default
+     * @param bool|null  $php            Whether PHP is to be enabled, or NULL to fall back to account default
+     * @param bool|null  $cgi            Whether CGI is to be enabled, or NULL to fall back to account default
+     *
      * @return Domain Newly created domain
      */
-    public function createDomain($domainName, $bandwidthLimit = null, $diskLimit = null, $ssl = null, $php = null, $cgi = null)
+    public function createDomain(string $domainName,
+                                 float  $bandwidthLimit = null,
+                                 float  $diskLimit = null,
+                                 bool   $ssl = null,
+                                 bool   $php = null,
+                                 bool   $cgi = null): Domain
     {
         $domain = Domain::create($this->getSelfManagedUser(), $domainName, $bandwidthLimit, $diskLimit, $ssl, $php, $cgi);
         $this->clearCache();
@@ -93,7 +101,7 @@ class User extends BaseObject
     /**
      * @return string The username
      */
-    public function getUsername()
+    public function getUsername(): string
     {
         return $this->getName();
     }
@@ -103,17 +111,15 @@ class User extends BaseObject
      *
      * @return float|null Limit in megabytes, or null for unlimited
      */
-    public function getBandwidthLimit()
+    public function getBandwidthLimit(): ?float
     {
         return floatval($this->getConfig('bandwidth')) ?: null;
     }
 
     /**
      * Returns the current period's bandwidth usage in megabytes.
-     *
-     * @return float
      */
-    public function getBandwidthUsage()
+    public function getBandwidthUsage(): float
     {
         return floatval($this->getUsage('bandwidth'));
     }
@@ -123,17 +129,15 @@ class User extends BaseObject
      *
      * @return int|null Limit, or null for unlimited
      */
-    public function getDatabaseLimit()
+    public function getDatabaseLimit(): ?int
     {
         return intval($this->getConfig('mysql')) ?: null;
     }
 
     /**
      * Returns the current number databases in use.
-     *
-     * @return int
      */
-    public function getDatabaseUsage()
+    public function getDatabaseUsage(): int
     {
         return intval($this->getUsage('mysql'));
     }
@@ -143,17 +147,15 @@ class User extends BaseObject
      *
      * @return float|null Limit in megabytes, or null for unlimited
      */
-    public function getDiskLimit()
+    public function getDiskLimit(): ?float
     {
         return floatval($this->getConfig('quota')) ?: null;
     }
 
     /**
      * Returns the current disk usage in megabytes.
-     *
-     * @return float
      */
-    public function getDiskUsage()
+    public function getDiskUsage(): float
     {
         return floatval($this->getUsage('quota'));
     }
@@ -161,7 +163,7 @@ class User extends BaseObject
     /**
      * @return Domain|null The default domain for the user, if any
      */
-    public function getDefaultDomain()
+    public function getDefaultDomain(): ?Domain
     {
         if (empty($name = $this->getConfig('domain'))) {
             return null;
@@ -171,30 +173,24 @@ class User extends BaseObject
 
     /**
      * Returns maximum number of domains allowed to this user, or NULL for unlimited.
-     *
-     * @return int|null
      */
-    public function getDomainLimit()
+    public function getDomainLimit(): ?int
     {
         return intval($this->getConfig('vdomains')) ?: null;
     }
 
     /**
      * Returns number of domains owned by this user.
-     *
-     * @return int
      */
-    public function getDomainUsage()
+    public function getDomainUsage(): int
     {
         return intval($this->getUsage('vdomains'));
     }
 
     /**
      * Returns whether the user is currently suspended.
-     *
-     * @return bool
      */
-    public function isSuspended()
+    public function isSuspended(): bool
     {
         return Conversion::toBool($this->getConfig('suspended'));
     }
@@ -202,12 +198,12 @@ class User extends BaseObject
     /**
      * @return Domain[]
      */
-    public function getDatabases()
+    public function getDatabases(): array
     {
         return $this->getCache(self::CACHE_DATABASES, function () {
             $databases = [];
             foreach ($this->getSelfManagedContext()->invokeApiGet('DATABASES') as $fullName) {
-                list($user, $db) = explode('_', $fullName, 2);
+                [$user, $db] = explode('_', $fullName, 2);
                 if ($this->getUsername() != $user) {
                     throw new DirectAdminException('Username incorrect on database ' . $fullName);
                 }
@@ -217,22 +213,18 @@ class User extends BaseObject
         });
     }
 
-    /**
-     * @param string $domainName
-     * @return null|Domain
-     */
-    public function getDomain($domainName)
+    public function getDomain(string $domainName): ?Domain
     {
         if (!isset($this->domains)) {
             $this->getDomains();
         }
-        return isset($this->domains[$domainName]) ? $this->domains[$domainName] : null;
+        return $this->domains[$domainName] ?? null;
     }
 
     /**
      * @return Domain[]
      */
-    public function getDomains()
+    public function getDomains(): array
     {
         if (!isset($this->domains)) {
             if (!$this->isSelfManaged()) {
@@ -247,7 +239,7 @@ class User extends BaseObject
     /**
      * @return string The user type, as one of the ACCOUNT_TYPE_ constants in the DirectAdmin class
      */
-    public function getType()
+    public function getType(): string
     {
         return $this->getConfig('usertype');
     }
@@ -255,7 +247,7 @@ class User extends BaseObject
     /**
      * @return bool Whether the user can use CGI
      */
-    public function hasCGI()
+    public function hasCGI(): bool
     {
         return Conversion::toBool($this->getConfig('cgi'));
     }
@@ -263,7 +255,7 @@ class User extends BaseObject
     /**
      * @return bool Whether the user can use PHP
      */
-    public function hasPHP()
+    public function hasPHP(): bool
     {
         return Conversion::toBool($this->getConfig('php'));
     }
@@ -271,15 +263,15 @@ class User extends BaseObject
     /**
      * @return bool Whether the user can use SSL
      */
-    public function hasSSL()
+    public function hasSSL(): bool
     {
         return Conversion::toBool($this->getConfig('ssl'));
     }
 
     /**
-     * @return UserContext
+     * @return UserContext|BaseContext
      */
-    public function impersonate()
+    public function impersonate(): UserContext|BaseContext
     {
         /** @var ResellerContext $context */
         if (!($context = $this->getContext()) instanceof ResellerContext) {
@@ -298,14 +290,14 @@ class User extends BaseObject
     public function modifyConfig(array $newConfig)
     {
         $this->getContext()->invokeApiPost('MODIFY_USER', array_merge(
-                $this->loadConfig(),
-                Conversion::processUnlimitedOptions($newConfig),
-                ['action' => 'customize', 'user' => $this->getUsername()]
+            $this->loadConfig(),
+            Conversion::processUnlimitedOptions($newConfig),
+            ['action' => 'customize', 'user' => $this->getUsername()]
         ));
         $this->clearCache();
     }
 
-        /**
+    /**
      * Modifies the user package
      *
      * @param $package
@@ -317,7 +309,7 @@ class User extends BaseObject
         );
         $this->clearCache();
     }
-    
+
     /**
      * Modifies the reseller package
      *
@@ -334,46 +326,52 @@ class User extends BaseObject
     /**
      * Generate a new one time pass or login URL
      *
-     * @param $package
+     * @param $data
      */
-    public function loginKeys($data)
+    public function loginKeys($data): array
     {
         return $this->getContext()->invokeApiPost('LOGIN_KEYS',
-            array_merge([ 'action' => 'create' ], $data)
+            array_merge(['action' => 'create'], $data)
         );
     }
 
     /**
      * Create DNS records
      *
-     * @param $package
+     * @param $data
      */
-    public function dnsControl($data)
+    public function dnsControl($data): array
     {
         return $this->getContext()->invokeApiPost('DNS_CONTROL',
-            array_merge([ 'action' => 'add' ], $data)
+            array_merge(['action' => 'add'], $data)
         );
     }
 
     /**
      * Loads the current dns configuration from the server.
      *
-     * @return array
+     * @param $domain
+     *
+     * @return string[]
      */
-    public function loadDnsControl($domain)
+    public function getDnsRecords($domain): array
     {
-        return $this->getContext()->invokeApiGet('DNS_CONTROL', ['domain' => $domain, 'json' => 'yes']);
+        return $this->getContext()->invokeApiGet('DNS_CONTROL', [
+            'domain'          => $domain,
+            'full_mx_records' => 'yes',
+            'json'            => 'yes'
+        ]);
     }
-    
+
     /**
      * Create FTP user
-     * 
+     *
      * @param $data
-     * @return array
      */
-    public function create_ftp_user($data) {
+    public function createFtpUser($data): array
+    {
         return $this->getContext()->invokeApiPost('FTP',
-            array_merge([ 'action' => 'create' ], $data)
+            array_merge(['action' => 'create'], $data)
         );
     }
 
@@ -381,31 +379,31 @@ class User extends BaseObject
      * Delete FTP user
      *
      * @param $data
-     * @return array
      */
-    public function delete_ftp_user($data) {
+    public function deleteFtpUser($data): array
+    {
         return $this->getContext()->invokeApiPost('FTP',
-            array_merge([ 'action' => 'delete' ], $data)
+            array_merge(['action' => 'delete'], $data)
         );
     }
-    
-   
+
+
     /**
      * Install SSL certificate
      *
      * @param $data
-     * @return array
      */
-    public function install_ssl($data) {
+    public function installSsl($data): array
+    {
         return $this->getContext()->invokeApiPost('SSL',
-            array_merge([ 'action' => 'save' ], $data)
+            array_merge(['action' => 'save'], $data)
         );
     }
 
     /**
      * @param bool $newValue Whether catch-all email is enabled for this user
      */
-    public function setAllowCatchall($newValue)
+    public function setAllowCatchall(bool $newValue)
     {
         $this->modifyConfig(['catchall' => Conversion::onOff($newValue)]);
     }
@@ -413,80 +411,75 @@ class User extends BaseObject
     /**
      * @param float|null $newValue New value, or NULL for unlimited
      */
-    public function setBandwidthLimit($newValue)
+    public function setBandwidthLimit(?float $newValue)
     {
-        $this->modifyConfig(['bandwidth' => isset($newValue) ? floatval($newValue) : null]);
+        $this->modifyConfig(['bandwidth' => $newValue ?? null]);
     }
 
     /**
      * @param float|null $newValue New value, or NULL for unlimited
      */
-    public function setDiskLimit($newValue)
+    public function setDiskLimit(?float $newValue)
     {
-        $this->modifyConfig(['quota' => isset($newValue) ? floatval($newValue) : null]);
+        $this->modifyConfig(['quota' => $newValue ?? null]);
     }
 
     /**
      * @param int|null $newValue New value, or NULL for unlimited
      */
-    public function setDomainLimit($newValue)
+    public function setDomainLimit(?int $newValue)
     {
-        $this->modifyConfig(['vdomains' => isset($newValue) ? intval($newValue) : null]);
+        $this->modifyConfig(['vdomains' => $newValue ?? null]);
     }
 
     /**
      * Constructs the correct object from the given user config.
      *
-     * @param array $config The raw config from DirectAdmin
+     * @param array       $config  The raw config from DirectAdmin
      * @param UserContext $context The context within which the config was retrieved
+     *
      * @return Admin|Reseller|User The correct object
      * @throws DirectAdminException If the user type could not be determined
      */
-    public static function fromConfig($config, UserContext $context)
+    public static function fromConfig(array $config, UserContext $context): Reseller|Admin|User
     {
         $name = $config['username'];
-        switch ($config['usertype']) {
-            case DirectAdmin::ACCOUNT_TYPE_USER:
-                return new self($name, $context, $config);
-            case DirectAdmin::ACCOUNT_TYPE_RESELLER:
-                return new Reseller($name, $context, $config);
-            case DirectAdmin::ACCOUNT_TYPE_ADMIN:
-                return new Admin($name, $context, $config);
-            default:
-                throw new DirectAdminException("Unknown user type '$config[usertype]'");
-        }
+        return match ($config['usertype']) {
+            DirectAdmin::ACCOUNT_TYPE_USER     => new self($name, $context, $config),
+            DirectAdmin::ACCOUNT_TYPE_RESELLER => new Reseller($name, $context, $config),
+            DirectAdmin::ACCOUNT_TYPE_ADMIN    => new Admin($name, $context, $config),
+            default                            => throw new DirectAdminException("Unknown user type '$config[usertype]'"),
+        };
     }
 
     /**
      * Internal function to safe guard config changes and cache them.
      *
      * @param string $item Config item to retrieve
+     *
      * @return mixed The value of the config item, or NULL
      */
-    private function getConfig($item)
+    private function getConfig(string $item): mixed
     {
-        return $this->getCacheItem(self::CACHE_CONFIG, $item, function () {
-            return $this->loadConfig();
-        });
+        return $this->getCacheItem(self::CACHE_CONFIG, $item, fn() => $this->loadConfig());
     }
 
     /**
      * Internal function to safe guard usage changes and cache them.
      *
      * @param string $item Usage item to retrieve
+     *
      * @return mixed The value of the stats item, or NULL
      */
-    private function getUsage($item)
+    private function getUsage(string $item): mixed
     {
-        return $this->getCacheItem(self::CACHE_USAGE, $item, function () {
-            return $this->getContext()->invokeApiGet('SHOW_USER_USAGE', ['user' => $this->getUsername()]);
-        });
+        return $this->getCacheItem(self::CACHE_USAGE, $item, fn() => $this->getContext()->invokeApiGet('SHOW_USER_USAGE', ['user' => $this->getUsername()]));
     }
 
     /**
      * @return UserContext The local user context
      */
-    protected function getSelfManagedContext()
+    protected function getSelfManagedContext(): UserContext
     {
         return $this->isSelfManaged() ? $this->getContext() : $this->impersonate();
     }
@@ -494,7 +487,7 @@ class User extends BaseObject
     /**
      * @return User The user acting as himself
      */
-    protected function getSelfManagedUser()
+    protected function getSelfManagedUser(): User
     {
         return $this->isSelfManaged() ? $this : $this->impersonate()->getContextUser();
     }
@@ -502,17 +495,15 @@ class User extends BaseObject
     /**
      * @return bool Whether the account is managing itself
      */
-    protected function isSelfManaged()
+    protected function isSelfManaged(): bool
     {
         return $this->getUsername() === $this->getContext()->getUsername();
     }
 
     /**
      * Loads the current user configuration from the server.
-     *
-     * @return array
      */
-    private function loadConfig()
+    private function loadConfig(): array
     {
         return $this->getContext()->invokeApiGet('SHOW_USER_CONFIG', ['user' => $this->getUsername()]);
     }

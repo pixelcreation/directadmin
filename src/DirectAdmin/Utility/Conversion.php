@@ -22,11 +22,12 @@ class Conversion
     /**
      * Reduces any input to an ON/OFF value.
      *
-     * @param mixed $input Data to convert
-     * @param mixed $default Fallback to use if $input is NULL
+     * @param mixed      $input   Data to convert
+     * @param bool|mixed $default Fallback to use if $input is NULL
+     *
      * @return string Either ON or OFF
      */
-    public static function onOff($input, $default = false)
+    public static function onOff(mixed $input, mixed $default = false): string
     {
         return self::toBool($input, $default) ? 'ON' : 'OFF';
     }
@@ -34,28 +35,39 @@ class Conversion
     /**
      * Expands a single option to its unlimited counterpart if NULL or literal 'unlimited'.
      *
-     * @param array $options Array of options to process
-     * @param string $key Key of the item to process
+     * @param array  $options Array of options to process
+     * @param string $key     Key of the item to process
      */
-    protected static function processUnlimitedOption(array &$options, $key)
+    protected static function processUnlimitedOption(array &$options, string $key)
     {
-        $ukey = "u{$key}";
-        unset($options[$ukey]);
+        $uKey = "u$key";
+        unset($options[$uKey]);
         if (array_key_exists($key, $options) && ($options[$key] === 'unlimited' || !isset($options[$key]))) {
-            $options[$ukey] = 'ON';
+            $options[$uKey] = 'ON';
         }
     }
 
     /**
-     * Detects package/domain options that can be unlimited and sets the accordingly.
+     * Detects package/domain options that can be unlimited and sets them accordingly.
      *
-     * @param array $options
+     *
      * @return array Modified array
      */
-    public static function processUnlimitedOptions(array $options)
+    public static function processUnlimitedOptions(array $options): array
     {
-        foreach (['bandwidth', 'domainptr', 'ftp', 'mysql', 'nemailf', 'nemailml', 'nemailr', 'nemails',
-                    'nsubdomains', 'quota', 'vdomains', ] as $key) {
+        foreach ([
+                     'bandwidth',
+                     'domainptr',
+                     'ftp',
+                     'mysql',
+                     'nemailf',
+                     'nemailml',
+                     'nemailr',
+                     'nemails',
+                     'nsubdomains',
+                     'quota',
+                     'vdomains',
+                 ] as $key) {
             self::processUnlimitedOption($options, $key);
         }
         return $options;
@@ -64,14 +76,11 @@ class Conversion
     /**
      * Processes DirectAdmin style encoded responses into a sane array.
      *
-     * @param string $data
-     * @return array
+     *
      */
-    public static function responseToArray($data)
+    public static function responseToArray(string $data): array
     {
-        $unescaped = preg_replace_callback('/&#([0-9]{2})/', function ($val) {
-            return chr($val[1]);
-        }, $data);
+        $unescaped = preg_replace_callback('/&#([0-9]{2})/', fn($val) => chr($val[1]), $data);
         return Query::parse($unescaped);
     }
 
@@ -79,11 +88,12 @@ class Conversion
      * Ensures a DA-style response element is wrapped properly as an array.
      *
      * @param mixed $result Messy input
+     *
      * @return array Sane output
      */
-    public static function sanitizeArray($result)
+    public static function sanitizeArray(mixed $result): array
     {
-        if (count($result) == 1 && isset($result['list[]'])) {
+        if ((is_countable($result) ? count($result) : 0) == 1 && isset($result['list[]'])) {
             $result = $result['list[]'];
         }
         return is_array($result) ? $result : [$result];
@@ -92,12 +102,11 @@ class Conversion
     /**
      * Converts values like ON, YES etc. to proper boolean variables.
      *
-     * @param mixed $value Value to be converted
-     * @param mixed $default Value to use if $value is NULL
-     * @return bool
+     * @param mixed      $value   Value to be converted
+     * @param bool|mixed $default Value to use if $value is NULL
      */
-    public static function toBool($value, $default = false)
+    public static function toBool(mixed $value, mixed $default = false): bool
     {
-        return filter_var(isset($value) ? $value : $default, FILTER_VALIDATE_BOOLEAN);
+        return filter_var($value ?? $default, FILTER_VALIDATE_BOOLEAN);
     }
 }

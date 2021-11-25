@@ -20,16 +20,16 @@ use Omines\DirectAdmin\Objects\Domain;
 class Forwarder extends MailObject
 {
     /** @var string[] */
-    private $recipients;
+    private string|array $recipients;
 
     /**
      * Construct the object.
      *
-     * @param string $prefix The part before the @ in the address
-     * @param Domain $domain The containing domain
+     * @param string       $prefix     The part before the @ in the address
+     * @param Domain       $domain     The containing domain
      * @param array|string $recipients Array or string containing the recipients
      */
-    public function __construct($prefix, Domain $domain, $recipients)
+    public function __construct($prefix, Domain $domain, array|string $recipients)
     {
         parent::__construct($prefix, $domain);
         $this->recipients = is_string($recipients) ? array_map('trim', explode(',', $recipients)) : $recipients;
@@ -38,15 +38,13 @@ class Forwarder extends MailObject
     /**
      * Creates a new forwarder.
      *
-     * @param Domain $domain
-     * @param string $prefix
      * @param string|string[] $recipients
-     * @return Forwarder
+     *
      */
-    public static function create(Domain $domain, $prefix, $recipients)
+    public static function create(Domain $domain, string $prefix, array|string $recipients): Forwarder
     {
         $domain->invokePost('EMAIL_FORWARDERS', 'create', [
-            'user' => $prefix,
+            'user'  => $prefix,
             'email' => is_array($recipients) ? implode(',', $recipients) : $recipients,
         ]);
         return new self($prefix, $domain, $recipients);
@@ -65,7 +63,7 @@ class Forwarder extends MailObject
      *
      * @return string[]
      */
-    public function getRecipients()
+    public function getRecipients(): array
     {
         return $this->recipients;
     }
@@ -75,10 +73,8 @@ class Forwarder extends MailObject
      *
      * @return string[]
      */
-    public function getAliases()
+    public function getAliases(): array
     {
-        return array_map(function ($domain) {
-            return $this->getPrefix() . '@' . $domain;
-        }, $this->getDomain()->getDomainNames());
+        return array_map(fn($domain) => "{$this->getPrefix()}@$domain", $this->getDomain()->getDomainNames());
     }
 }

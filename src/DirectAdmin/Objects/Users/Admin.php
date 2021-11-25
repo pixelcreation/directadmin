@@ -11,6 +11,7 @@
 namespace Omines\DirectAdmin\Objects\Users;
 
 use Omines\DirectAdmin\Context\AdminContext;
+use Omines\DirectAdmin\Context\BaseContext;
 use Omines\DirectAdmin\Context\UserContext;
 use Omines\DirectAdmin\DirectAdminException;
 
@@ -30,9 +31,9 @@ class Admin extends Reseller
     }
 
     /**
-     * @return AdminContext
+     * @return AdminContext|BaseContext
      */
-    public function impersonate()
+    public function impersonate(): AdminContext|BaseContext
     {
         /** @var AdminContext $context */
         if (!($context = $this->getContext()) instanceof AdminContext) {

@@ -11,7 +11,9 @@
 namespace Omines\DirectAdmin;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\TransferException;
+use JsonException;
 use Omines\DirectAdmin\Context\AdminContext;
 use Omines\DirectAdmin\Context\ResellerContext;
 use Omines\DirectAdmin\Context\UserContext;
@@ -24,35 +26,31 @@ use Omines\DirectAdmin\Utility\Conversion;
  */
 class DirectAdmin
 {
-    const ACCOUNT_TYPE_ADMIN = 'admin';
-    const ACCOUNT_TYPE_RESELLER = 'reseller';
-    const ACCOUNT_TYPE_USER = 'user';
+    public const ACCOUNT_TYPE_ADMIN    = 'admin';
+    public const ACCOUNT_TYPE_RESELLER = 'reseller';
+    public const ACCOUNT_TYPE_USER     = 'user';
 
     /** @var string */
-    private $authenticatedUser;
+    private string $authenticatedUser;
 
     /** @var string */
-    private $username;
+    private string $username;
 
     /** @var string */
-    private $password;
-
-    /** @var string */
-    private $baseUrl;
+    private string $baseUrl;
 
     /** @var Client */
-    private $connection;
+    private Client $connection;
 
     /**
      * Connects to DirectAdmin with an admin account.
      *
-     * @param string $url The base URL of the DirectAdmin server
+     * @param string $url      The base URL of the DirectAdmin server
      * @param string $username The username of the account
      * @param string $password The password of the account
-     * @param bool $validate Whether to ensure the account exists and is of the correct type
-     * @return AdminContext
+     * @param bool   $validate Whether to ensure the account exists and is of the correct type
      */
-    public static function connectAdmin($url, $username, $password, $validate = false)
+    public static function connectAdmin(string $url, string $username, string $password, bool $validate = false): AdminContext
     {
         return new AdminContext(new self($url, $username, $password), $validate);
     }
@@ -60,13 +58,12 @@ class DirectAdmin
     /**
      * Connects to DirectAdmin with a reseller account.
      *
-     * @param string $url The base URL of the DirectAdmin server
+     * @param string $url      The base URL of the DirectAdmin server
      * @param string $username The username of the account
      * @param string $password The password of the account
-     * @param bool $validate Whether to ensure the account exists and is of the correct type
-     * @return ResellerContext
+     * @param bool   $validate Whether to ensure the account exists and is of the correct type
      */
-    public static function connectReseller($url, $username, $password, $validate = false)
+    public static function connectReseller(string $url, string $username, string $password, bool $validate = false): ResellerContext
     {
         return new ResellerContext(new self($url, $username, $password), $validate);
     }
@@ -74,13 +71,12 @@ class DirectAdmin
     /**
      * Connects to DirectAdmin with a user account.
      *
-     * @param string $url The base URL of the DirectAdmin server
+     * @param string $url      The base URL of the DirectAdmin server
      * @param string $username The username of the account
      * @param string $password The password of the account
-     * @param bool $validate Whether to ensure the account exists and is of the correct type
-     * @return UserContext
+     * @param bool   $validate Whether to ensure the account exists and is of the correct type
      */
-    public static function connectUser($url, $username, $password, $validate = false)
+    public static function connectUser(string $url, string $username, string $password, bool $validate = false): UserContext
     {
         return new UserContext(new self($url, $username, $password), $validate);
     }
@@ -88,29 +84,28 @@ class DirectAdmin
     /**
      * Creates a connection wrapper to DirectAdmin as the specified account.
      *
-     * @param string $url The base URL of the DirectAdmin server
+     * @param string $url      The base URL of the DirectAdmin server
      * @param string $username The username of the account
      * @param string $password The password of the account
      */
-    protected function __construct($url, $username, $password)
+    protected function __construct(string $url, string $username, private string $password)
     {
-        $accounts = explode('|', $username);
+        $accounts                = explode('|', $username);
         $this->authenticatedUser = current($accounts);
-        $this->username = end($accounts);
-        $this->password = $password;
-        $this->baseUrl = rtrim($url, '/') . '/';
-        $this->connection = new Client([
+        $this->username          = end($accounts);
+        $this->baseUrl           = rtrim($url, '/') . '/';
+        $this->connection        = new Client([
             'base_uri' => $this->baseUrl,
-            'auth' => [$username, $password],
+            'auth'     => [$username, $password],
         ]);
     }
 
     /**
      * Returns the username behind the current connection.
      *
-     * @return string Currently logged in user's username
+     * @return string Currently logged-in user's username
      */
-    public function getUsername()
+    public function getUsername(): string
     {
         return $this->username;
     }
@@ -118,13 +113,14 @@ class DirectAdmin
     /**
      * Invokes the DirectAdmin API with specific options.
      *
-     * @param string $method HTTP method to use (ie. GET or POST)
+     * @param string $method  HTTP method to use (i.e. GET or POST)
      * @param string $command DirectAdmin API command to invoke
-     * @param array $options Guzzle options to use for the call
+     * @param array  $options Guzzle options to use for the call
+     *
      * @return array The unvalidated response
-     * @throws DirectAdminException If anything went wrong on the network level
+     * @throws DirectAdminException|GuzzleException|JsonException If anything went wrong on the network level
      */
-    public function invokeApi($method, $command, $options = [])
+    public function invokeApi(string $method, string $command, array $options = []): array
     {
         $result = $this->rawRequest($method, '/CMD_API_' . $command, $options);
         if (!empty($result['error'])) {
@@ -136,24 +132,21 @@ class DirectAdmin
     /**
      * Returns a clone of the connection logged in as a managed user or reseller.
      *
-     * @param string $username
-     * @return DirectAdmin
+     *
      */
-    public function loginAs($username)
+    public function loginAs(string $username): DirectAdmin
     {
         // DirectAdmin format is to just pipe the accounts together under the master password
-        return new self($this->baseUrl, $this->authenticatedUser . "|{$username}", $this->password);
+        return new self($this->baseUrl, $this->authenticatedUser . "|$username", $this->password);
     }
 
     /**
      * Sends a raw request to DirectAdmin.
      *
-     * @param string $method
-     * @param string $uri
-     * @param array $options
-     * @return array
+     *
+     * @throws GuzzleException|JsonException
      */
-    public function rawRequest($method, $uri, $options)
+    public function rawRequest(string $method, string $uri, array $options): array
     {
         try {
             $response = $this->connection->request($method, $uri, $options);
@@ -161,7 +154,7 @@ class DirectAdmin
                 throw new DirectAdminException(sprintf('DirectAdmin API returned text/html to %s %s containing "%s"', $method, $uri, strip_tags($response->getBody()->getContents())));
             }
             if ($response->getHeader('Content-Type')[0] == 'application/json; charset=utf-8') {
-                return json_decode($response->getBody()->getContents(), true);
+                return json_decode($response->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
             }
             $body = $response->getBody()->getContents();
             return Conversion::responseToArray($body);

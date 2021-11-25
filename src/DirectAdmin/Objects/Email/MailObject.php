@@ -22,30 +22,26 @@ abstract class MailObject extends DomainObject
     /**
      * Delete the object.
      *
-     * @param string $command Command to execute
+     * @param string $command   Command to execute
      * @param string $paramName Parameter name for the delete command
      */
-    protected function invokeDelete($command, $paramName)
+    protected function invokeDelete(string $command, string $paramName)
     {
         $this->invokePost($command, 'delete', [$paramName => $this->getPrefix()]);
     }
 
     /**
      * Returns the full email address for this forwarder.
-     *
-     * @return string
      */
-    public function getEmailAddress()
+    public function getEmailAddress(): string
     {
         return $this->getPrefix() . '@' . $this->getDomainName();
     }
 
     /**
      * Returns the domain-agnostic part before the @ in the forwarder.
-     *
-     * @return string
      */
-    public function getPrefix()
+    public function getPrefix(): string
     {
         return $this->getName();
     }
